@@ -6,7 +6,8 @@ inputs:
     required: true
     default: ""
 outputs:
-  description: "Generated config schema"
+  generated-config-schema:
+    description: "Generated config schema"
 runs:
   using: "node20"
   main: "dist/index.js"

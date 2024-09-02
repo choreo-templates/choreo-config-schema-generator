@@ -29,37 +29,30 @@ function readComponentYaml(filePath) {
   }
 }
 
+function generateSchemaForBaseType(schema, requiredItems, type) {
+      // if required is not set or set to true, add the item to required list
+      if (schema.required === undefined || schema.required) {
+        requiredItems.push(schema.name);
+      }
+      const generatedSchema = {
+        type: type,
+      };
+      if (schema.values) {
+        generatedSchema.enum = schema.values;
+      }
+      if (schema.displayName) {
+        generatedSchema.title = schema.displayName;
+      }
+      return generatedSchema;
+}
+
 function generateSchemaFromYaml(schema, requiredItems) {
   if (schema.type === "string") {
-    if (!typeof schema.required === "boolean" || schema.required !== false) {
-      requiredItems.push(schema.name);
-    }
-    const generatedSchema = {
-      type: "string",
-    };
-    if (schema.values) {
-      generatedSchema.enum = schema.values;
-    }
-    if (schema.displayName) {
-      generatedSchema.title = schema.displayName;
-    }
-    return generatedSchema;
+    return generateSchemaForBaseType(schema, requiredItems, "string");
   }
 
   if (schema.type === "integer") {
-    if (!typeof schema.required === "boolean" || schema.required !== false) {
-      requiredItems.push(schema.name);
-    }
-    const generatedSchema = {
-      type: "integer",
-    };
-    if (schema.values) {
-      generatedSchema.enum = schema.values;
-    }
-    if (schema.displayName) {
-      generatedSchema.title = schema.displayName;
-    }
-    return generatedSchema;
+    return generateSchemaForBaseType(schema, requiredItems, "integer");
   }
 
   if (schema.type === "array") {
