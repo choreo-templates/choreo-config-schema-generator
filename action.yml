@@ -1,0 +1,12 @@
+name: "Choreo Config Schema Generator"
+description: "Generate config schema from component.yaml"
+inputs:
+  source-root-dir-path: 
+    description: "path to the root directory of the source code"
+    required: true
+    default: ""
+outputs:
+  description: "Generated config schema"
+runs:
+  using: "node20"
+  main: "dist/index.js"

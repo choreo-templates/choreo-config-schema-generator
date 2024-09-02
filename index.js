@@ -1,6 +1,23 @@
+const core = require("@actions/core");
 const yaml = require("js-yaml");
 const path = require("path");
 const fs = require("fs");
+
+const jsonSchema = {
+  $schema: "http://json-schema.org/draft-07/schema#",
+  type: "object",
+  properties: {},
+  required: [],
+};
+
+function readInput() {
+  try {
+    sourceRootDir = core.getInput("source-root-dir-path");
+    return sourceRootDir;
+  } catch (error) {
+    throw new Error(`Failed to read input: ${error.message}`);
+  }
+}
 
 function readComponentYaml(filePath) {
   try {
@@ -12,65 +29,66 @@ function readComponentYaml(filePath) {
   }
 }
 
-fileContent = readComponentYaml(
-  "/Users/janakas/Projects/choreo-config-schema-generator"
-);
-componentYamlFile = yaml.load(fileContent);
-
-const jsonSchema = {
-  $schema: "http://json-schema.org/draft-04/schema#",
-  type: "object",
-  properties: {},
-  required: [],
-};
-
-function generateSchemaFromYaml(item, requiredItems) {
-  if (item.type === "string") {
-    if (!typeof item.required === "boolean" || item.required !== false) {
-      requiredItems.push(item.name);
+function generateSchemaFromYaml(schema, requiredItems) {
+  if (schema.type === "string") {
+    if (!typeof schema.required === "boolean" || schema.required !== false) {
+      requiredItems.push(schema.name);
     }
-    return {
+    const generatedSchema = {
       type: "string",
     };
+    if (schema.values) {
+      generatedSchema.enum = schema.values;
+    }
+    if (schema.displayName) {
+      generatedSchema.title = schema.displayName;
+    }
+    return generatedSchema;
   }
 
-  if (item.type === "integer") {
-    if (!typeof item.required === "boolean" || item.required !== false) {
-      requiredItems.push(item.name);
+  if (schema.type === "integer") {
+    if (!typeof schema.required === "boolean" || schema.required !== false) {
+      requiredItems.push(schema.name);
     }
-    return {
+    const generatedSchema = {
       type: "integer",
     };
+    if (schema.values) {
+      generatedSchema.enum = schema.values;
+    }
+    if (schema.displayName) {
+      generatedSchema.title = schema.displayName;
+    }
+    return generatedSchema;
   }
 
-  if (item.type === "array") {
-    if (item.items.type === "string") {
-      return {
-        type: "array",
-        items: {
-          type: "string",
-        },
-      };
+  if (schema.type === "array") {
+    const generatedSchema = {
+      type: "array",
+      items: {
+        type: "string",
+      },
+      title: schema.displayName,
+    };
+    if (schema.items.type === "string") {
+      return generatedSchema;
     }
-    if (item.items.type === "integer") {
-      return {
-        type: "array",
-        items: {
-          type: "integer",
-        },
-      };
+    if (schema.items.type === "integer") {
+      generatedSchema.items.type = "integer";
+      return generatedSchema;
     }
     return {
       type: "array",
-      items: generateSchemaFromYaml(item.items, requiredItems),
+      items: generateSchemaFromYaml(schema.items, requiredItems),
+      title: schema.displayName,
     };
   }
 
-  if (item.type === "object") {
+  if (schema.type === "object") {
     let properties = {};
     let required = [];
-    if (item.properties) {
-      item.properties.forEach((property) => {
+    if (schema.properties) {
+      schema.properties.forEach((property) => {
         properties[property.name] = generateSchemaFromYaml(property, required);
       });
     }
@@ -78,15 +96,38 @@ function generateSchemaFromYaml(item, requiredItems) {
       type: "object",
       properties: properties,
       required: required,
+      title: schema.displayName,
     };
   }
 }
 
-componentYamlFile.configurations.schema.forEach((item) => {
-  jsonSchema.properties[item.name] = generateSchemaFromYaml(
-    item,
-    jsonSchema.required
-  );
-});
+function main() {
+  try {
+    const sourceRootDir = readInput();
+    const fileContent = readComponentYaml(sourceRootDir);
+    componentYamlFile = yaml.load(fileContent);
 
-console.log(JSON.stringify(jsonSchema));
+    if (
+      componentYamlFile.configurations &&
+      componentYamlFile.configurations.schema
+    ) {
+      componentYamlFile.configurations.schema.forEach((item) => {
+        jsonSchema.properties[item.name] = generateSchemaFromYaml(
+          item,
+          jsonSchema.required
+        );
+      });
+    }
+
+    fs.writeFileSync(
+      `${sourceRootDir}/config-schema.json`,
+      JSON.stringify(jsonSchema),
+      "utf-8"
+    );
+  } catch (error) {
+    console.log("config schema generation failed: ", error.message);
+    core.setFailed("config schema generation failed ", error.message);
+  }
+}
+
+main();
