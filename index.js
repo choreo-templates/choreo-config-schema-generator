@@ -30,20 +30,20 @@ function readComponentYaml(filePath) {
 }
 
 function generateSchemaForBaseType(schema, requiredItems, type) {
-      // if required is not set or set to true, add the item to required list
-      if (schema.required === undefined || schema.required) {
-        requiredItems.push(schema.name);
-      }
-      const generatedSchema = {
-        type: type,
-      };
-      if (schema.values) {
-        generatedSchema.enum = schema.values;
-      }
-      if (schema.displayName) {
-        generatedSchema.title = schema.displayName;
-      }
-      return generatedSchema;
+  // if required is not set or set to true, add the item to required list
+  if (schema.required === undefined || schema.required) {
+    requiredItems.push(schema.name);
+  }
+  const generatedSchema = {
+    type: type,
+  };
+  if (schema.values) {
+    generatedSchema.enum = schema.values;
+  }
+  if (schema.displayName) {
+    generatedSchema.title = schema.displayName;
+  }
+  return generatedSchema;
 }
 
 function generateSchemaFromYaml(schema, requiredItems) {
@@ -114,7 +114,7 @@ function main() {
 
     fs.writeFileSync(
       `${sourceRootDir}/config-schema.json`,
-      JSON.stringify(jsonSchema),
+      JSON.stringify(jsonSchema, null, 2),
       "utf-8"
     );
   } catch (error) {
