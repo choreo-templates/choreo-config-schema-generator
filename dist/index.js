@@ -30939,15 +30939,6 @@ const jsonSchema = {
   required: [],
 };
 
-function readInput() {
-  try {
-    sourceRootDir = core.getInput("source-root-dir-path");
-    return sourceRootDir;
-  } catch (error) {
-    throw new Error(`Failed to read input: ${error.message}`);
-  }
-}
-
 function readComponentYaml(filePath) {
   try {
     fullPath = path.join(filePath, ".choreo", "component.yaml");
@@ -30976,12 +30967,8 @@ function generateSchemaForBaseType(schema, requiredItems, type) {
 }
 
 function generateSchemaFromYaml(schema, requiredItems) {
-  if (schema.type === "string") {
-    return generateSchemaForBaseType(schema, requiredItems, "string");
-  }
-
-  if (schema.type === "integer") {
-    return generateSchemaForBaseType(schema, requiredItems, "integer");
+  if (schema.type === "string" ||  schema.type === "integer") {
+    return generateSchemaForBaseType(schema, requiredItems, schema.type);
   }
 
   if (schema.type === "array") {
@@ -31025,22 +31012,17 @@ function generateSchemaFromYaml(schema, requiredItems) {
 
 function main() {
   try {
-    const sourceRootDir = readInput();
+    const sourceRootDir = core.getInput("source-root-dir-path");
     const fileContent = readComponentYaml(sourceRootDir);
     componentYamlFile = yaml.load(fileContent);
 
-    if (
-      componentYamlFile.configurations &&
-      componentYamlFile.configurations.schema
-    ) {
-      componentYamlFile.configurations.schema.forEach((item) => {
-        jsonSchema.properties[item.name] = generateSchemaFromYaml(
-          item,
-          jsonSchema.required
-        );
-      });
-    }
-
+    componentYamlFile.configurations?.schema.forEach((item) => {
+      jsonSchema.properties[item.name] = generateSchemaFromYaml(
+        item,
+        jsonSchema.required
+      );
+    });
+    
     fs.writeFileSync(
       `${sourceRootDir}/config-schema.json`,
       JSON.stringify(jsonSchema, null, 2),
