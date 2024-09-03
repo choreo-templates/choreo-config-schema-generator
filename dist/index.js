@@ -31023,7 +31023,7 @@ function main() {
     });
 
     fs.writeFileSync(
-      `${sourceRootDir}/config-schema.json`,
+      `${sourceRootDir}/choreo-config-schema.json`,
       JSON.stringify(jsonSchema, null, 2),
       "utf-8"
     );
