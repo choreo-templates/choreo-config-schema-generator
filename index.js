@@ -20,6 +20,10 @@ function readComponentYaml(filePath) {
   }
 }
 
+function isBaseType(type) {
+  return type === "string" || type === "integer" || type === "boolean";
+}
+
 function generateSchemaForBaseType(schema, requiredItems, type) {
   // if required is not set or set to true, add the item to required list
   if (schema.required === undefined || schema.required) {
@@ -38,23 +42,18 @@ function generateSchemaForBaseType(schema, requiredItems, type) {
 }
 
 function generateSchemaFromYaml(schema, requiredItems) {
-  if (schema.type === "string" ||  schema.type === "integer") {
+  if (isBaseType(schema.type)) {
     return generateSchemaForBaseType(schema, requiredItems, schema.type);
   }
 
   if (schema.type === "array") {
     const generatedSchema = {
       type: "array",
-      items: {
-        type: "string",
-      },
+      items: {},
       title: schema.displayName,
     };
-    if (schema.items.type === "string") {
-      return generatedSchema;
-    }
-    if (schema.items.type === "integer") {
-      generatedSchema.items.type = "integer";
+    if (isBaseType(schema.items.type)) {
+      generatedSchema.items.type = schema.items.type;
       return generatedSchema;
     }
     return {
@@ -93,7 +92,7 @@ function main() {
         jsonSchema.required
       );
     });
-    
+
     fs.writeFileSync(
       `${sourceRootDir}/config-schema.json`,
       JSON.stringify(jsonSchema, null, 2),
