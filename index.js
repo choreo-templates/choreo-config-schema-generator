@@ -21,7 +21,7 @@ function readComponentYaml(filePath) {
 }
 
 function isBaseType(type) {
-  return type === "string" || type === "integer" || type === "boolean";
+  return type === "string" || type === "number" || type === "boolean" || type === "secret";
 }
 
 function generateSchemaForBaseType(schema, requiredItems, type) {
@@ -52,20 +52,30 @@ function generateSchemaFromYaml(schema, requiredItems) {
       items: {},
       title: schema.displayName,
     };
+
+    const required = [];
+    if (schema.required === undefined || schema.required ) {
+      requiredItems.push(schema.name);
+    }
+
     if (isBaseType(schema.items.type)) {
       generatedSchema.items.type = schema.items.type;
       return generatedSchema;
     }
     return {
       type: "array",
-      items: generateSchemaFromYaml(schema.items, requiredItems),
+      items: generateSchemaFromYaml(schema.items, required),
       title: schema.displayName,
     };
   }
 
   if (schema.type === "object") {
     let properties = {};
-    let required = [];
+    const required = [];
+    if (schema.required === undefined || schema.required ) {
+      requiredItems.push(schema.name);
+    }
+
     if (schema.properties) {
       schema.properties.forEach((property) => {
         properties[property.name] = generateSchemaFromYaml(property, required);
