@@ -98,16 +98,18 @@ function main() {
 
     const schema = [];
     componentYamlFile.configuration?.env.forEach((item) => {
-      schema.push({
-        name: item.name,
-        type: item.valueFromConfigForm?.type || "string",
-        required: item.valueFromConfigForm?.required,
-        displayName: item.valueFromConfigForm?.displayName,
-      })
+      if (item.valueFrom?.configForm) {
+        schema.push({
+          name: item.name,
+          type: item.valueFrom?.configForm?.type || "string",
+          required: item.valueFrom?.configForm?.required,
+          displayName: item.valueFromConfigForm?.displayName,
+        })
+      }
     })
 
     componentYamlFile.configuration?.file.forEach((file) => {
-      file?.valueFromConfigForm.forEach((item) => {
+      file?.valueFrom?.configForm.forEach((item) => {
         schema.push(item)
       })
     })
