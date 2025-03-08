@@ -21,7 +21,7 @@ function readComponentYaml(filePath) {
 }
 
 function isBaseType(type) {
-  return type === "string" || type === "number" || type === "boolean" || type === "secret";
+  return type === "string" || type === "number" || type === "boolean" || type === "secret" || type === undefined;
 }
 
 function generateSchemaForBaseType(schema, requiredItems, type) {
@@ -30,7 +30,7 @@ function generateSchemaForBaseType(schema, requiredItems, type) {
     requiredItems.push(schema.name);
   }
   const generatedSchema = {
-    type: type,
+    type: type || "string",
   };
   if (schema.values) {
     generatedSchema.enum = schema.values;
@@ -96,7 +96,28 @@ function main() {
     const fileContent = readComponentYaml(sourceRootDir);
     componentYamlFile = yaml.load(fileContent);
 
-    componentYamlFile.configurations?.schema.forEach((item) => {
+    const schema = [];
+    componentYamlFile.configuration?.env.forEach((item) => {
+      if (item.valueFrom?.configForm) {
+        schema.push({
+          name: item.name,
+          type: item.valueFrom?.configForm?.type || "string",
+          required: item.valueFrom?.configForm?.required,
+          displayName: item.valueFromConfigForm?.displayName,
+        })
+      }
+    })
+
+    componentYamlFile.configuration?.file.forEach((file) => {
+      file?.values?.forEach((item) => {
+        schema.push({
+          name: item.name,
+          ...item?.valueFrom?.configForm,
+        })
+      })
+    })
+
+    schema.forEach((item) => {
       jsonSchema.properties[item.name] = generateSchemaFromYaml(
         item,
         jsonSchema.required
