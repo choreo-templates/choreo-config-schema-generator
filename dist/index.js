@@ -31036,8 +31036,11 @@ function main() {
     })
 
     componentYamlFile.configuration?.file.forEach((file) => {
-      file?.valueFrom?.configForm.forEach((item) => {
-        schema.push(item)
+      file?.values?.forEach((item) => {
+        schema.push({
+          name: item.name,
+          ...item?.valueFrom?.configForm,
+        })
       })
     })
 
