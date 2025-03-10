@@ -97,7 +97,8 @@ function main() {
     componentYamlFile = yaml.load(fileContent);
 
     const schema = [];
-    componentYamlFile.configuration?.env.forEach((item) => {
+    const configs = componentYamlFile.configurations || componentYamlFile.configuration || [];
+    configs.env.forEach((item) => {
       if (item.valueFrom?.configForm) {
         schema.push({
           name: item.name,
@@ -108,7 +109,7 @@ function main() {
       }
     })
 
-    componentYamlFile.configuration?.file.forEach((file) => {
+    configs.file.forEach((file) => {
       file?.values?.forEach((item) => {
         schema.push({
           name: item.name,
