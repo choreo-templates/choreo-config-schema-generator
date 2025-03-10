@@ -2,7 +2,6 @@ const core = require("@actions/core");
 const yaml = require("js-yaml");
 const path = require("path");
 const fs = require("fs");
-const { env } = require("process");
 
 const jsonSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
