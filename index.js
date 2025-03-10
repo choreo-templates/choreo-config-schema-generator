@@ -2,6 +2,7 @@ const core = require("@actions/core");
 const yaml = require("js-yaml");
 const path = require("path");
 const fs = require("fs");
+const { env } = require("process");
 
 const jsonSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
@@ -97,7 +98,10 @@ function main() {
     componentYamlFile = yaml.load(fileContent);
 
     const schema = [];
-    const configs = componentYamlFile.configurations || componentYamlFile.configuration || [];
+    const configs = componentYamlFile.configurations || componentYamlFile.configuration || {
+      env: [],
+      file: [],
+    };
     configs.env.forEach((item) => {
       if (item.valueFrom?.configForm) {
         schema.push({
