@@ -126,6 +126,13 @@ function main() {
       })
     }
 
+    schema.forEach((item) => {
+      jsonSchema.properties[item.name] = generateSchemaFromYaml(
+        item,
+        jsonSchema.required
+      );
+    });
+
     fs.writeFileSync(
       `${sourceRootDir}/choreo-config-schema.json`,
       JSON.stringify(jsonSchema, null, 2),
