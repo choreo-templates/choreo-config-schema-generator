@@ -31028,16 +31028,6 @@ function main() {
       env: [],
       file: [],
     };
-    configs.env.forEach((item) => {
-      if (item.valueFrom?.configForm) {
-        schema.push({
-          name: item.name,
-          type: item.valueFrom?.configForm?.type || "string",
-          required: item.valueFrom?.configForm?.required,
-          displayName: item.valueFromConfigForm?.displayName,
-        })
-      }
-    })
 
     if (configs.env) {
       configs.env.forEach((item) => {
