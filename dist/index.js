@@ -31039,21 +31039,29 @@ function main() {
       }
     })
 
-    configs.file.forEach((file) => {
-      file?.values?.forEach((item) => {
-        schema.push({
-          name: item.name,
-          ...item?.valueFrom?.configForm,
+    if (configs.env) {
+      configs.env.forEach((item) => {
+        if (item.valueFrom?.configForm) {
+          schema.push({
+            name: item.name,
+            type: item.valueFrom?.configForm?.type || "string",
+            required: item.valueFrom?.configForm?.required,
+            displayName: item.valueFromConfigForm?.displayName,
+          })
+        }
+      })
+    }
+
+    if (configs.file) {
+      configs.file.forEach((file) => {
+        file?.values?.forEach((item) => {
+          schema.push({
+            name: item.name,
+            ...item?.valueFrom?.configForm,
+          })
         })
       })
-    })
-
-    schema.forEach((item) => {
-      jsonSchema.properties[item.name] = generateSchemaFromYaml(
-        item,
-        jsonSchema.required
-      );
-    });
+    }
 
     fs.writeFileSync(
       `${sourceRootDir}/choreo-config-schema.json`,
