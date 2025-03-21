@@ -31036,7 +31036,7 @@ function main() {
             name: item.name,
             type: item.valueFrom?.configForm?.type || "string",
             required: item.valueFrom?.configForm?.required,
-            displayName: item.valueFromConfigForm?.displayName,
+            displayName: item.valueFrom?.configForm?.displayName,
           })
         }
       })
