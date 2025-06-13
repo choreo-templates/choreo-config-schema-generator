@@ -126,7 +126,7 @@ function main() {
       })
     }
 
-    if (configs.env.length === 0 && configs.file.length === 0) {
+    if (schema.length === 0) {
       console.log("No configurations found in the component.yaml");
       return;
     }
