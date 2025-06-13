@@ -126,6 +126,11 @@ function main() {
       })
     }
 
+    if (configs.env.length === 0 && configs.file.length === 0) {
+      console.log("No configurations found in the component.yaml");
+      return;
+    }
+
     schema.forEach((item) => {
       jsonSchema.properties[item.name] = generateSchemaFromYaml(
         item,
