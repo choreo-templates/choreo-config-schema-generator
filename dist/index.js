@@ -30948,7 +30948,13 @@ function readComponentYaml(filePath) {
 }
 
 function isBaseType(type) {
-  return type === "string" || type === "number" || type === "boolean" || type === "secret" || type === undefined;
+  return (
+    type === "string" ||
+    type === "number" ||
+    type === "boolean" ||
+    type === "secret" ||
+    type === undefined
+  );
 }
 
 function generateSchemaForBaseType(schema, requiredItems, type) {
@@ -30981,7 +30987,7 @@ function generateSchemaFromYaml(schema, requiredItems) {
     };
 
     const required = [];
-    if (schema.required === undefined || schema.required ) {
+    if (schema.required === undefined || schema.required) {
       requiredItems.push(schema.name);
     }
 
@@ -30999,7 +31005,7 @@ function generateSchemaFromYaml(schema, requiredItems) {
   if (schema.type === "object") {
     let properties = {};
     const required = [];
-    if (schema.required === undefined || schema.required ) {
+    if (schema.required === undefined || schema.required) {
       requiredItems.push(schema.name);
     }
 
@@ -31015,6 +31021,78 @@ function generateSchemaFromYaml(schema, requiredItems) {
       title: schema.displayName,
     };
   }
+
+  if (schema.type === "oneOf") {
+    const required = [];
+    const generatedSchema = {
+      anyOf: [], // Use anyOf instead of oneOf as ballerina generates anyOf for oneOf
+      title: schema.displayName,
+    };
+
+    if (schema.required === undefined || schema.required) {
+      requiredItems.push(schema.name);
+    }
+
+    if (schema.oneOf) {
+      schema.oneOf.forEach((item) => {
+        generatedSchema.anyOf.push(generateSchemaFromYaml(item, required));
+      });
+    }
+    return generatedSchema;
+  }
+
+  if (schema.type === "map") {
+    let properties = {};
+    const required = [];
+    const generatedSchema = {
+      type: "object",
+      additionalProperties: {},
+      title: schema.displayName,
+    };
+
+    if (schema.required === undefined || schema.required) {
+      requiredItems.push(schema.name);
+    }
+
+    if (schema.properties) {
+      if (isBaseType(schema.properties.type)) {
+        generatedSchema.additionalProperties.type = schema.properties.type;
+        return generatedSchema;
+      }
+
+      if (schema.properties.type === "object") {
+        if (Array.isArray(schema.properties.additionalProperties)) {
+          schema.properties.additionalProperties.forEach((property) => {
+            properties[property.name] = generateSchemaFromYaml(
+              property,
+              required
+            );
+          });
+        } else if (schema.properties.additionalProperties) {
+          generatedSchema.additionalProperties = generateSchemaFromYaml(
+            schema.properties.additionalProperties,
+            required
+          );
+          return generatedSchema;
+        }
+      }
+
+      if (schema.properties.type === "array") {
+        generatedSchema.additionalProperties.type = "array";
+        generatedSchema.additionalProperties.items = generateSchemaFromYaml(
+          schema.properties.items,
+          required
+        );
+        return generatedSchema;
+      }
+    }
+    return {
+      type: "object",
+      additionalProperties: properties,
+      required: required,
+      title: schema.displayName,
+    };
+  }
 }
 
 function main() {
@@ -31024,33 +31102,48 @@ function main() {
     componentYamlFile = yaml.load(fileContent);
 
     const schema = [];
-    const configs = componentYamlFile.configurations || componentYamlFile.configuration || {
-      env: [],
-      file: [],
-    };
+    const configs = componentYamlFile.configurations ||
+      componentYamlFile.configuration || {
+        env: [],
+        file: [],
+      };
 
     if (configs.env) {
       configs.env.forEach((item) => {
         if (item.valueFrom?.configForm) {
-          schema.push({
-            name: item.name,
-            type: item.valueFrom?.configForm?.type || "string",
-            required: item.valueFrom?.configForm?.required,
-            displayName: item.valueFrom?.configForm?.displayName,
-          })
+          if (item.valueFrom?.configForm) {
+            const envSchema = {
+              name: item.name,
+              type: item.valueFrom?.configForm?.type || "string",
+              required: item.valueFrom?.configForm?.required,
+              displayName: item.valueFrom?.configForm?.displayName,
+            };
+            if (item.valueFrom?.configForm?.oneOf) {
+              envSchema.type = "oneOf";
+            }
+            schema.push(envSchema);
+          }
         }
-      })
+      });
     }
 
     if (configs.file) {
       configs.file.forEach((file) => {
         file?.values?.forEach((item) => {
-          schema.push({
-            name: item.name,
-            ...item?.valueFrom?.configForm,
-          })
-        })
-      })
+          if (item.valueFrom?.configForm?.oneOf) {
+            schema.push({
+              name: item.name,
+              type: "oneOf",
+              ...item?.valueFrom?.configForm,
+            });
+          } else {
+            schema.push({
+              name: item.name,
+              ...item?.valueFrom?.configForm,
+            });
+          }
+        });
+      });
     }
 
     if (schema.length === 0) {
