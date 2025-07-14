@@ -31042,7 +31042,10 @@ function generateSchemaFromYaml(schema, requiredItems) {
   }
 
   if (schema.type === "map") {
-    let properties = {};
+    let objProperties = {
+      type: "object",
+      properties: {},
+    };
     const required = [];
     const generatedSchema = {
       type: "object",
@@ -31063,7 +31066,7 @@ function generateSchemaFromYaml(schema, requiredItems) {
       if (schema.properties.type === "object") {
         if (Array.isArray(schema.properties.additionalProperties)) {
           schema.properties.additionalProperties.forEach((property) => {
-            properties[property.name] = generateSchemaFromYaml(
+            objProperties.properties[property.name] = generateSchemaFromYaml(
               property,
               required
             );
@@ -31088,7 +31091,7 @@ function generateSchemaFromYaml(schema, requiredItems) {
     }
     return {
       type: "object",
-      additionalProperties: properties,
+      additionalProperties: objProperties,
       required: required,
       title: schema.displayName,
     };
